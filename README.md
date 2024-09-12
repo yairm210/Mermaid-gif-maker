@@ -7,3 +7,13 @@ Made with:
 - [Mermaid](https://github.com/mermaid-js/mermaid) for graph rendering
 - [html2canvas](https://github.com/niklasvh/html2canvas) and [gif.js](https://github.com/jnordberg/gif.js) for creating the GIF
 - [simple.css](https://github.com/kevquirk/simple.css) for the styling
+
+### Examples
+
+Database migration
+
+![Database migration](examples/database-migration.gif)
+
+Binary tree rotation
+
+![Binary tree rotation](examples/binary-tree-rotation.gif)

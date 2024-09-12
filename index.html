@@ -154,51 +154,90 @@
                 editor.setValue(initialGraphText)
             }
 
-            const frames = [
-                "graph TD\n" +
-                "Source-->OldDB\n" +
-                "Source~~~NewDB:::invisible\n" +
-                "OldDB-->Destination\n" +
-                "NewDB~~~Destination\n" +
-                "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
+            const examples = {
+                "Migration": [
+                    "graph TD\n" +
+                    "Source-->OldDB\n" +
+                    "Source~~~NewDB:::invisible\n" +
+                    "OldDB-->Destination\n" +
+                    "NewDB~~~Destination\n" +
+                    "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
 
-                "graph TD\n" +
-                "Source-->OldDB\n" +
-                "Source-->NewDB\n" +
-                "OldDB-->Destination\n" +
-                "NewDB~~~Destination\n" +
-                "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
+                    "graph TD\n" +
+                    "Source-->OldDB\n" +
+                    "Source-->NewDB\n" +
+                    "OldDB-->Destination\n" +
+                    "NewDB~~~Destination\n" +
+                    "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
 
-                "graph TD\n" +
-                "Source-->OldDB\n" +
-                "Source-->NewDB\n" +
-                "OldDB-->Destination\n" +
-                "NewDB-.->Destination\n" +
-                "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
+                    "graph TD\n" +
+                    "Source-->OldDB\n" +
+                    "Source-->NewDB\n" +
+                    "OldDB-->Destination\n" +
+                    "NewDB-.->Destination\n" +
+                    "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
 
-                "graph TD\n" +
-                "Source-->OldDB\n" +
-                "Source-->NewDB\n" +
-                "OldDB-.->Destination\n" +
-                "NewDB-->Destination\n" +
-                "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
+                    "graph TD\n" +
+                    "Source-->OldDB\n" +
+                    "Source-->NewDB\n" +
+                    "OldDB-.->Destination\n" +
+                    "NewDB-->Destination\n" +
+                    "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
 
-                "graph TD\n" +
-                "Source-->OldDB\n" +
-                "Source-->NewDB\n" +
-                "OldDB~~~Destination\n" +
-                "NewDB-->Destination\n" +
-                "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
+                    "graph TD\n" +
+                    "Source-->OldDB\n" +
+                    "Source-->NewDB\n" +
+                    "OldDB~~~Destination\n" +
+                    "NewDB-->Destination\n" +
+                    "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
 
-                "graph TD\n" +
-                "Source~~~OldDB:::invisible\n" +
-                "Source-->NewDB\n" +
-                "OldDB~~~Destination\n" +
-                "NewDB-->Destination\n" +
-                "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
-            ]
+                    "graph TD\n" +
+                    "Source~~~OldDB:::invisible\n" +
+                    "Source-->NewDB\n" +
+                    "OldDB~~~Destination\n" +
+                    "NewDB-->Destination\n" +
+                    "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
+                ],
+                "Binary tree": [
+                    "graph TD\n" +
+                    "Root[1]~~~L:::invisible\n" +
+                    "L~~~LL:::invisible\n" +
+                    "L~~~LR:::invisible\n" +
+                    "Root~~~R:::invisible\n" +
+                    "R~~~RL:::invisible\n" +
+                    "R~~~RR:::invisible\n" +
+                    "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
 
-            frames.forEach(frame => {
+                    "graph TD\n" +
+                    "Root[1]~~~L:::invisible\n" +
+                    "L~~~LL:::invisible\n" +
+                    "L~~~LR:::invisible\n" +
+                    "Root-->R[2]\n" +
+                    "R~~~RL:::invisible\n" +
+                    "R~~~RR:::invisible\n" +
+                    "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
+
+                    "graph TD\n" +
+                    "Root[1]~~~L:::invisible\n" +
+                    "L~~~LL:::invisible\n" +
+                    "L~~~LR:::invisible\n" +
+                    "Root-->R[2]\n" +
+                    "R~~~RL:::invisible\n" +
+                    "R-->RR[3]\n" +
+                    "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
+
+                    "graph TD\n" +
+                    "Root[2]-->L[1]\n" +
+                    "L~~~LL:::invisible\n" +
+                    "L~~~LR:::invisible\n" +
+                    "Root-->R[3]\n" +
+                    "R~~~RL:::invisible\n" +
+                    "R~~~RR:::invisible\n" +
+                    "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
+                ]
+            }
+
+            examples["Migration"].forEach(frame => {
                 window.addEditor(frame)
             })
         });
