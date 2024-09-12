@@ -79,10 +79,10 @@
         }
     </script>
 
-    <script src="/monaco-editor-loader.js"></script>
+    <script src="/monaco-editor-loader.js" type="text/javascript"></script>
     <script type="module">
         require.config({ paths: { vs: '/monaco-editor-vs' } });
-        import initEditor from '/monaco-mermaid.js';
+        import initEditor from 'monaco-mermaid.js';
 
         var counter = 0
 
