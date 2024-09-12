@@ -3,7 +3,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Mermaid.js GIF creator</title>
+    <title>Mermaid.js GIF maker</title>
     <link rel="stylesheet" href="simple.min.css">
     <script src="html2canvas.js"></script>
     <script src="gif.js"></script>
@@ -38,7 +38,7 @@
         window.createGif = async function () {
             const maxGraphWidth = Math.max(...Array.from(document.getElementsByClassName('graph')).map(graph => graph.clientWidth));
             const maxGraphHeight = Math.max(...Array.from(document.getElementsByClassName('graph')).map(graph => graph.clientHeight));
-            // Impirically found that 2x is required for width and height, not sure why
+            // Empirically found that 2x is required for width and height, not sure why
             var gif = new GIF({
                 workers: 2,
                 quality: 10,
@@ -71,7 +71,7 @@
                 // svg -> canvas
                 const canvas = await html2canvas(graphElement)
                 // canvas -> gif
-                gif.addFrame(canvas, {delay: 500});
+                gif.addFrame(canvas, {delay: 800});
             }
 
             // gif.render();
@@ -154,22 +154,59 @@
                 editor.setValue(initialGraphText)
             }
 
-            window.addEditor("graph TD\n" +
-                "A-->C\n" +
-                    "A~~~B\n" +
-                    "B-->D\n" +
-                    "C-->D")
-            window.addEditor("graph TD\n" +
-                    "A-->C\n" +
-                    "A-->B\n" +
-                    "B-->D\n" +
-                    "C-->D")
+            const frames = [
+                "graph TD\n" +
+                "Source-->OldDB\n" +
+                "Source~~~NewDB:::invisible\n" +
+                "OldDB-->Destination\n" +
+                "NewDB~~~Destination\n" +
+                "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
+
+                "graph TD\n" +
+                "Source-->OldDB\n" +
+                "Source-->NewDB\n" +
+                "OldDB-->Destination\n" +
+                "NewDB~~~Destination\n" +
+                "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
+
+                "graph TD\n" +
+                "Source-->OldDB\n" +
+                "Source-->NewDB\n" +
+                "OldDB-->Destination\n" +
+                "NewDB-.->Destination\n" +
+                "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
+
+                "graph TD\n" +
+                "Source-->OldDB\n" +
+                "Source-->NewDB\n" +
+                "OldDB-.->Destination\n" +
+                "NewDB-->Destination\n" +
+                "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
+
+                "graph TD\n" +
+                "Source-->OldDB\n" +
+                "Source-->NewDB\n" +
+                "OldDB~~~Destination\n" +
+                "NewDB-->Destination\n" +
+                "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
+
+                "graph TD\n" +
+                "Source~~~OldDB:::invisible\n" +
+                "Source-->NewDB\n" +
+                "OldDB~~~Destination\n" +
+                "NewDB-->Destination\n" +
+                "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
+            ]
+
+            frames.forEach(frame => {
+                window.addEditor(frame)
+            })
         });
 
     </script>
 </head>
 <body>
-    <h1>Mermaid.js GIF creator</h1>
+    <h1>Mermaid.js GIF maker</h1>
 
     <div id="frame-container"></div>
     <button class="btn" onclick="createGif()">Create Gif</button>
