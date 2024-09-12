@@ -1,0 +1,179 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Mermaid.js GIF creator</title>
+    <link rel="stylesheet" href="simple.min.css">
+    <script src="html2canvas.js"></script>
+    <script src="gif.js"></script>
+    <script src="gif.worker.js"></script>
+
+    <script type="module">
+        window.isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+        var mermaidTheme = 'default';
+        if (window.isDarkMode) {
+            mermaidTheme = 'dark';
+        }
+    // dark mode
+
+        mermaid.initialize({ startOnLoad: false, theme: mermaidTheme });
+
+        // https://stackoverflow.com/questions/65533391/functions-not-working-when-type-module-or-import
+        window.updateGraph = async function (baseGraphText, frameNumber) {
+
+            // somehow it gets rid of this??? and we need to set the resulting sgv into another container???
+            // I confuse
+            const {svg} = await mermaid.render('rendering-area-'+frameNumber, baseGraphText);
+
+            // text -> svg
+            const renderingAreaContainer = document.getElementById('graph-' + frameNumber);
+            renderingAreaContainer.innerHTML = svg;
+        }
+
+
+        window.createGif = async function () {
+            const maxGraphWidth = Math.max(...Array.from(document.getElementsByClassName('graph')).map(graph => graph.clientWidth));
+            const maxGraphHeight = Math.max(...Array.from(document.getElementsByClassName('graph')).map(graph => graph.clientHeight));
+            // Impirically found that 2x is required for width and height, not sure why
+            var gif = new GIF({
+                workers: 2,
+                quality: 10,
+                width: maxGraphWidth * 2,
+                height: maxGraphHeight * 2,
+                background: window.isDarkMode ? '#000' : '#fff',
+            });
+            gif.on('finished', function(blob) {
+              const objectUrl = URL.createObjectURL(blob)
+                document.getElementById('gif').src = objectUrl;
+
+                setTimeout(() => { // scroll to end of page (need to wait for gif to be rendered)
+                    window.scrollTo(0, document.body.scrollHeight);
+                }, 100);
+              // Magic from https://stackoverflow.com/questions/63440099/how-to-download-a-gif-from-a-given-url-using-javascript
+              (async () => {
+                  //create new a element
+                  let a = document.createElement('a');
+                  // use download attribute https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#Attributes
+                  a.download = 'myGif';
+                  a.href = objectUrl;
+                  //store download url in javascript https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes#JavaScript_access
+                  a.dataset.downloadurl = ['application/octet-stream', a.download, a.href].join(':');
+                  //click on element to start download
+                  a.click();
+                })();
+            });
+            const graphElements = Array.from(document.getElementsByClassName('graph'));
+            for (const graphElement of graphElements) {
+                // svg -> canvas
+                const canvas = await html2canvas(graphElement)
+                // canvas -> gif
+                gif.addFrame(canvas, {delay: 500});
+            }
+
+            // gif.render();
+            gif.render();
+        }
+    </script>
+
+    <script src="/monaco-editor-loader.js"></script>
+    <script type="module">
+        require.config({ paths: { vs: '/monaco-editor-vs' } });
+        import initEditor from '/monaco-mermaid.js';
+
+        var counter = 0
+
+        require(['vs/editor/editor.main'], function () {
+            initEditor(monaco); // Defines Mermaid language and theme
+            window.addEditor = function (initialGraphText, position = 0) {
+                counter += 1
+
+                const frameNumber = counter
+
+
+                var frame = document.createElement('div');
+                frame.id = 'frame-' + frameNumber;
+                frame.className = 'frame';
+                frame.style = "border: 1px solid black; margin: 10px";
+
+                if (position === 0) {
+                    document.getElementById('frame-container').appendChild(frame);
+                } else {
+                    document.getElementById('frame-container').insertBefore(frame, document.getElementsByClassName("frame")[position]);
+                }
+
+                const buttonHolder = document.createElement('div');
+                // make the buttons float in the middle
+                buttonHolder.style = "display: inline-block; text-align: center; margin: 10px 0;";
+                frame.appendChild(buttonHolder);
+
+                const duplicateEditorButton = document.createElement('button');
+                duplicateEditorButton.onclick = () => {
+                    addEditor(editor.getValue(), position + 1)
+                }
+                duplicateEditorButton.innerText = "Duplicate";
+                buttonHolder.appendChild(duplicateEditorButton);
+                buttonHolder.appendChild(document.createElement('br'));
+
+                const deleteEditorButton = document.createElement('button');
+                deleteEditorButton.onclick = () => {
+                    frame.remove()
+                }
+                deleteEditorButton.innerText = "Remove";
+                buttonHolder.appendChild(deleteEditorButton);
+
+                var monacoEditor = document.createElement('div');
+                monacoEditor.id = 'container-' + frameNumber;
+                monacoEditor.style = "width: 300px; height: 300px; border: 1px solid grey; display: inline-block";
+                frame.appendChild(monacoEditor);
+
+                var renderingArea = document.createElement('div');
+                renderingArea.id = 'rendering-area-' + frameNumber;
+
+                var graph = document.createElement('div');
+                graph.id = 'graph-' + frameNumber;
+                graph.className = 'graph'; // used for query selection
+                graph.style = "display: inline-block";
+                frame.appendChild(graph);
+
+                var editor = monaco.editor.create(document.getElementById('container-' + frameNumber), {
+                    value: ['function x() {', '\tconsole.log("Hello world!");', '}'].join('\n'),
+                    language: 'mermaid',
+                    minimap: {
+                        enabled: false
+                    },
+                    theme: window.isDarkMode ? 'mermaid-dark' : 'mermaid',
+                    overviewRulerLanes: 0
+                });
+                editor.getModel().onDidChangeContent(() => {
+                    updateGraph(editor.getValue(), frameNumber);
+                });
+                editor.setValue(initialGraphText)
+            }
+
+            window.addEditor("graph TD\n" +
+                "A-->C\n" +
+                    "A~~~B\n" +
+                    "B-->D\n" +
+                    "C-->D")
+            window.addEditor("graph TD\n" +
+                    "A-->C\n" +
+                    "A-->B\n" +
+                    "B-->D\n" +
+                    "C-->D")
+        });
+
+    </script>
+</head>
+<body>
+    <h1>Mermaid.js GIF creator</h1>
+
+    <div id="frame-container"></div>
+    <button class="btn" onclick="createGif()">Create Gif</button>
+    <img src="" id="gif">
+
+</body>
+</html>
