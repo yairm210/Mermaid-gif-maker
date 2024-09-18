@@ -36,6 +36,7 @@
 
 
         window.createGif = async function () {
+            document.getElementById('create-gif-button').textContent = 'Creating gif...';
             const maxGraphWidth = Math.max(...Array.from(document.getElementsByClassName('graph')).map(graph => graph.clientWidth));
             const maxGraphHeight = Math.max(...Array.from(document.getElementsByClassName('graph')).map(graph => graph.clientHeight));
             // Empirically found that 2x is required for width and height, not sure why
@@ -69,13 +70,17 @@
             const graphElements = Array.from(document.getElementsByClassName('graph'));
             for (const graphElement of graphElements) {
                 // svg -> canvas
-                const canvas = await html2canvas(graphElement)
+                const canvas = await html2canvas(graphElement, {
+                    allowTaint: true,
+                    backgroundColor: window.isDarkMode ? '#000000' : '#ffffff',
+                })
                 // canvas -> gif
                 gif.addFrame(canvas, {delay: 800});
             }
 
             // gif.render();
             gif.render();
+            document.getElementById('create-gif-button').textContent = 'Create Gif';
         }
     </script>
 
@@ -97,7 +102,8 @@
                 var frame = document.createElement('div');
                 frame.id = 'frame-' + frameNumber;
                 frame.className = 'frame';
-                frame.style = "border: 1px solid black; margin: 10px";
+                const borderColor = isDarkMode ? "white" : "black"
+                frame.style = `border: 1px solid ${borderColor}; margin: 10px; position: relative;`;
 
                 if (position === 0) {
                     document.getElementById('frame-container').appendChild(frame);
@@ -106,8 +112,16 @@
                 }
 
                 const buttonHolder = document.createElement('div');
+
                 // make the buttons float in the middle
-                buttonHolder.style = "display: inline-block; text-align: center; margin: 10px 0;";
+                buttonHolder.style = "display: inline-flex;" +
+                    "text-align: center;" +
+                    "margin: 10px;" +
+                    "flex-direction: column;" +
+                    "align-items: stretch;" +
+                    "top: 0px;" +
+                    "right: 0px;" +
+                    "position: absolute;";
                 frame.appendChild(buttonHolder);
 
                 const duplicateEditorButton = document.createElement('button');
@@ -248,7 +262,7 @@
     <h1>Mermaid.js GIF maker</h1>
 
     <div id="frame-container"></div>
-    <button class="btn" onclick="createGif()">Create Gif</button>
+    <button id="create-gif-button" class="btn" onclick="createGif()">Create Gif</button>
     <img src="" id="gif">
 
 </body>
