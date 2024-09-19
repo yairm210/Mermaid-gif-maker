@@ -103,7 +103,8 @@
                 frame.id = 'frame-' + frameNumber;
                 frame.className = 'frame';
                 const borderColor = isDarkMode ? "white" : "black"
-                frame.style = `border: 1px solid ${borderColor}; margin: 10px; position: relative;`;
+                frame.style = `border: 1px solid ${borderColor};
+                    margin: 10px; position: relative;`;
 
                 if (position === 0) {
                     document.getElementById('frame-container').appendChild(frame);
@@ -141,7 +142,7 @@
 
                 var monacoEditor = document.createElement('div');
                 monacoEditor.id = 'container-' + frameNumber;
-                monacoEditor.style = "width: 300px; height: 300px; border: 1px solid grey; display: inline-block";
+                monacoEditor.style = "width: 50%; height: 300px; border: 1px solid grey; display: inline-block";
                 frame.appendChild(monacoEditor);
 
                 var renderingArea = document.createElement('div');
@@ -150,7 +151,7 @@
                 var graph = document.createElement('div');
                 graph.id = 'graph-' + frameNumber;
                 graph.className = 'graph'; // used for query selection
-                graph.style = "display: inline-block";
+                graph.style = "display: inline-block;";
                 frame.appendChild(graph);
 
                 var editor = monaco.editor.create(document.getElementById('container-' + frameNumber), {
@@ -258,12 +259,20 @@
 
     </script>
 </head>
-<body>
+<body style="grid-template-columns: 1fr 80% 1fr">
+    <a href="https://github.com/yairm210/Mermaid-gif-maker" style="position: absolute">
+        <img decoding="async" width="149" height="149" src="https://github.blog/wp-content/uploads/2008/12/forkme_left_gray_6d6d6d.png"
+             class="attachment-full size-full" alt="Fork me on GitHub" loading="lazy">
+    </a>
     <h1>Mermaid.js GIF maker</h1>
 
     <div id="frame-container"></div>
-    <button id="create-gif-button" class="btn" onclick="createGif()">Create Gif</button>
-    <img src="" id="gif">
+    <button id="create-gif-button" class="btn" onclick="createGif()"
+        style="height: 100px; font-size: 36px">Create Gif</button>
+    <img src="" id="gif" style="margin: auto">
 
 </body>
+<footer>
+    Made by Yair Morgenstern, <a href="https://github.com/yairm210/Mermaid-gif-maker">source here</a>
+</footer>
 </html>
