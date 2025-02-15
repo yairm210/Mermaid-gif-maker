@@ -15,10 +15,7 @@
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
 
         var mermaidTheme = 'default';
-        if (window.isDarkMode) {
-            mermaidTheme = 'dark';
-        }
-    // dark mode
+        if (window.isDarkMode) mermaidTheme = 'dark';
 
         mermaid.initialize({ startOnLoad: false, theme: mermaidTheme });
 
@@ -27,11 +24,76 @@
 
             // somehow it gets rid of this??? and we need to set the resulting sgv into another container???
             // I confuse
-            const {svg} = await mermaid.render('rendering-area-'+frameNumber, baseGraphText);
+
+            async function getSvg(id, code){
+                try {
+                    const result = await mermaid.render(id, code);
+                    return result;
+                } catch { // display the error message in the editor, not outside - thanks https://github.com/mermaid-js/mermaid-live-editor/pull/1288/files :)
+                    const errorDiv = document.querySelector(`#d${id}`);
+                    const svg = errorDiv?.innerHTML ?? '';
+                    errorDiv?.remove();
+                    return {
+                    svg,
+                    bindFunctions: undefined
+                    };
+                }
+            }
+            const {svg} = await getSvg('rendering-area-'+frameNumber, baseGraphText);
 
             // text -> svg
             const renderingAreaContainer = document.getElementById('graph-' + frameNumber);
             renderingAreaContainer.innerHTML = svg;
+        }
+
+        var regex = /\{\[(\d+\s*[^|}]*(?:\s*\|\s*\d+\s*[^|}]*)*)\]\}/g
+        var numberregex = /\d+/
+        // Returns number/string pairs e.g. [{number:1, string: "a"}]
+        window.getPairs = function(text){
+            const list = []
+            var match
+            while ((match = regex.exec(text)) !== null) {
+                const pairs = match[1].split('|');
+                pairs.forEach(pair => {
+                    const number = pair.match(numberregex)[0]
+                    const string = pair.slice(number.length).trim()
+                    // const [number, string] = pair.split(':').map(s => s.trim());
+                    list.push({number: Number(number), string})
+                });
+            }
+            return list
+        }
+
+        window.generateTexts = function(text){
+            // Format: "Some text with {[0: A |1: B | 2: C]} and another {[3: D |4: E]} inside."
+            // Means: first part should be: From stage 0, A; From 1, B; From 2, C.
+            // Second part should be empty initially, and from stage 3, D; From 4, E
+            const diffs = [...text.matchAll(regex)]
+            const diffToPairs = new Map()
+            for (let diff of diffs){
+                diffToPairs.set(diff[0], window.getPairs(diff[0]))
+            }
+            var stages = [...diffToPairs.values()].flat().map((pair) => pair.number).toSorted()
+            stages = [...new Set(stages)] // Remove duplicates
+
+            var stageTexts = []
+            for (let stageNum of stages){
+                var stageText = text
+                for (let [diff, pairs] of diffToPairs){
+                    var pairToSubstitute = pairs.findLast((it) => it.number <= stageNum)
+                    const text = pairToSubstitute ? pairToSubstitute.string : ""
+                    stageText = stageText.replace(diff, text)
+                }
+                stageTexts.push(stageText)
+            }
+
+            return stageTexts
+        }
+
+        window.createEditors = function(templateText){
+            const texts = generateTexts(templateText)
+            window.removeAllEditors()
+            for (const text of texts) window.addEditor(text)
         }
 
 
@@ -48,23 +110,23 @@
                 background: window.isDarkMode ? '#000' : '#fff',
             });
             gif.on('finished', function(blob) {
-              const objectUrl = URL.createObjectURL(blob)
+                const objectUrl = URL.createObjectURL(blob)
                 document.getElementById('gif').src = objectUrl;
 
                 setTimeout(() => { // scroll to end of page (need to wait for gif to be rendered)
                     window.scrollTo(0, document.body.scrollHeight);
                 }, 100);
-              // Magic from https://stackoverflow.com/questions/63440099/how-to-download-a-gif-from-a-given-url-using-javascript
-              (async () => {
-                  //create new a element
-                  let a = document.createElement('a');
-                  // use download attribute https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#Attributes
-                  a.download = 'myGif';
-                  a.href = objectUrl;
-                  //store download url in javascript https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes#JavaScript_access
-                  a.dataset.downloadurl = ['application/octet-stream', a.download, a.href].join(':');
-                  //click on element to start download
-                  a.click();
+                // Magic from https://stackoverflow.com/questions/63440099/how-to-download-a-gif-from-a-given-url-using-javascript
+                (async () => {
+                    //create new a element
+                    let a = document.createElement('a');
+                    // use download attribute https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#Attributes
+                    a.download = 'myGif';
+                    a.href = objectUrl;
+                    //store download url in javascript https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes#JavaScript_access
+                    a.dataset.downloadurl = ['application/octet-stream', a.download, a.href].join(':');
+                    //click on element to start download
+                    a.click();
                 })();
             });
             const graphElements = Array.from(document.getElementsByClassName('graph'));
@@ -93,6 +155,47 @@
 
         require(['vs/editor/editor.main'], function () {
             initEditor(monaco); // Defines Mermaid language and theme
+
+            window.removeAllEditors = function(){
+                document.getElementById('frame-container').replaceChildren()
+            }
+
+            window.addTemplateEditor = function(){
+                const container = document.getElementById("template-container")
+                
+                var monacoEditor = document.createElement('div');
+                monacoEditor.id = 'template-editor';
+                monacoEditor.style = "width: 50%; height: 300px; border: 1px solid grey; display: inline-block";
+                container.appendChild(monacoEditor);
+
+                var template = [
+                    "graph TD",
+                    "Source {[0 --> |4 ~~~ ]} OldDB",
+                    "Source {[0 ~~~ |1 --> ]} NewDB{[0 :::invisible |1 ]}",
+                    "OldDB{[0 |4 :::invisible ]} {[0 --> |3 -.-> |4 ~~~ ]} Destination",
+                    "NewDB {[0 ~~~ |2 -.-> |3 --> ]} Destination",
+                    "",
+                    "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000;"
+                ].join("\n")
+
+                var editor = monaco.editor.create(document.getElementById('template-editor'), {
+                    value: template,
+                    language: 'mermaid',
+                    minimap: {
+                        enabled: false
+                    },
+                    theme: window.isDarkMode ? 'mermaid-dark' : 'mermaid',
+                    overviewRulerLanes: 0
+                });
+
+                window.createEditors(template)
+
+
+                editor.getModel().onDidChangeContent(() => {
+                    window.createEditors(editor.getValue())
+                });
+            }
+
             window.addEditor = function (initialGraphText, position = 0) {
                 counter += 1
 
@@ -170,49 +273,6 @@
             }
 
             const examples = {
-                "Migration": [
-                    "graph TD\n" +
-                    "Source-->OldDB\n" +
-                    "Source~~~NewDB:::invisible\n" +
-                    "OldDB-->Destination\n" +
-                    "NewDB~~~Destination\n" +
-                    "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
-
-                    "graph TD\n" +
-                    "Source-->OldDB\n" +
-                    "Source-->NewDB\n" +
-                    "OldDB-->Destination\n" +
-                    "NewDB~~~Destination\n" +
-                    "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
-
-                    "graph TD\n" +
-                    "Source-->OldDB\n" +
-                    "Source-->NewDB\n" +
-                    "OldDB-->Destination\n" +
-                    "NewDB-.->Destination\n" +
-                    "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
-
-                    "graph TD\n" +
-                    "Source-->OldDB\n" +
-                    "Source-->NewDB\n" +
-                    "OldDB-.->Destination\n" +
-                    "NewDB-->Destination\n" +
-                    "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
-
-                    "graph TD\n" +
-                    "Source-->OldDB\n" +
-                    "Source-->NewDB\n" +
-                    "OldDB~~~Destination\n" +
-                    "NewDB-->Destination\n" +
-                    "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
-
-                    "graph TD\n" +
-                    "Source~~~OldDB:::invisible\n" +
-                    "Source-->NewDB\n" +
-                    "OldDB~~~Destination\n" +
-                    "NewDB-->Destination\n" +
-                    "classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000; \n",
-                ],
                 "Binary tree": [
                     "graph TD\n" +
                     "Root[1]~~~L:::invisible\n" +
@@ -252,9 +312,12 @@
                 ]
             }
 
-            examples["Migration"].forEach(frame => {
-                window.addEditor(frame)
-            })
+            window.addTemplateEditor()
+
+            // examples["Migration"].forEach(frame => {
+            //     window.addEditor(frame)
+            // })
+            
         });
 
     </script>
@@ -262,10 +325,12 @@
 <body style="grid-template-columns: 1fr 80% 1fr">
     <a href="https://github.com/yairm210/Mermaid-gif-maker" style="position: absolute">
         <img decoding="async" width="149" height="149" src="https://github.blog/wp-content/uploads/2008/12/forkme_left_gray_6d6d6d.png"
-             class="attachment-full size-full" alt="Fork me on GitHub" loading="lazy">
+            class="attachment-full size-full" alt="Fork me on GitHub" loading="lazy">
     </a>
     <h1>Mermaid.js GIF maker</h1>
-
+    <div>This template of format: {[frameNumber text |frameNumber text ...]}</div>
+    <div id="template-container"></div>
+    <div>Is converted to these frames</div>
     <div id="frame-container"></div>
     <button id="create-gif-button" class="btn" onclick="createGif()"
         style="height: 100px; font-size: 36px">Create Gif</button>

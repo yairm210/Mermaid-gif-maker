@@ -17,3 +17,4 @@ Database migration
 Binary tree rotation
 
 ![Binary tree rotation](examples/binary-tree-rotation.gif)
+
