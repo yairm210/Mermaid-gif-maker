@@ -8,9 +8,21 @@ Made with:
 - [html2canvas](https://github.com/niklasvh/html2canvas) and [gif.js](https://github.com/jnordberg/gif.js) for creating the GIF
 - [simple.css](https://github.com/kevquirk/simple.css) for the styling
 
+Uses a simple templating style to generate several similar frames from the same base text
+
 ### Examples
 
 Database migration
+
+```
+graph TD
+Source {[0 --> |4 ~~~ ]} OldDB
+Source {[0 ~~~ |1 --> ]} NewDB{[0 :::invisible |1 ]}
+OldDB{[0 |4 :::invisible ]} {[0 --> |3 -.-> |4 ~~~ ]} Destination
+NewDB {[0 ~~~ |2 -.-> |3 --> ]} Destination
+
+classDef invisible fill-opacity:0, stroke-opacity:0, color:#0000;
+```
 
 ![Database migration](examples/database-migration.gif)
 
