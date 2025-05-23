@@ -10,6 +10,10 @@ Made with:
 
 Uses a simple templating style to generate several similar frames from the same base text
 
+- Tempates start with `{[` and end with `]}`, to not conflict with Mermaid constructs.
+- Each part consists of the frame number, from which point on this applies
+- So for example, `{[0 ~~~ |2 -.-> |3 --> ]}` means "from frame 0, be ` ~~~ `; from frame 2, be ` -.-> `; from frame 3, be ` --> `"
+
 ### Examples
 
 Database migration
